@@ -10,24 +10,54 @@ framebuffer_size_callback :: proc "cdecl" (window: glfw.WindowHandle, width, hei
     gl.Viewport(0, 0, width, height)
 }
 
-process_input :: proc "c" (window: glfw.WindowHandle){
+process_input :: proc (window: glfw.WindowHandle){
     if glfw.GetKey(window, glfw.KEY_ESCAPE) == glfw.PRESS {
         glfw.SetWindowShouldClose(window, true)
     }
 }
 
-draw_triangle :: proc "c" (){
+draw_triangle :: proc (){
     using gl
     vertices := [9]f32{
         -0.5, -0.5, 0.0,
         0.5, -0.5, 0.0,
         0.0, 0.5, 0.0,
     }
-    VBO: u32
+    VAO:u32
+    GenVertexArrays(1, &VAO)
+    BindVertexArray(VAO)
+
+    VBO:u32
     GenBuffers(1, &VBO)
     BindBuffer(ARRAY_BUFFER, VBO)
-    BufferData(ARRAY_BUFFER, len(vertices) * size_of(f32), &vertices, STATIC_DRAW)
+    BufferData(ARRAY_BUFFER, size_of(vertices), &vertices, STATIC_DRAW)
+    VertexAttribPointer(0,3,FLOAT,FALSE,3*size_of(f32),uintptr(0))
+    EnableVertexAttribArray(0)
+
+    
+    vertex_shader_source := cstring(raw_data(#load("shader.vert")))
+    vertex_shader := CreateShader(VERTEX_SHADER)
+    ShaderSource(vertex_shader, 1, &vertex_shader_source, nil)
+    CompileShader(vertex_shader)
+
+    fragment_shader_source := cstring(raw_data(#load("frag.frag")))
+    fragment_shader := CreateShader(FRAGMENT_SHADER)
+    ShaderSource(fragment_shader, 1, &fragment_shader_source, nil)
+    CompileShader(fragment_shader)
+
+    shader_program := CreateProgram()
+    AttachShader(shader_program, vertex_shader)
+    AttachShader(shader_program, fragment_shader)
+    LinkProgram(shader_program)
+
+    DeleteShader(vertex_shader)
+    DeleteShader(fragment_shader)
+
+    UseProgram(shader_program)
+    DrawArrays(TRIANGLES, 0, 3)
+    
 }
+
 
 main :: proc() {
     using gl
@@ -60,6 +90,8 @@ main :: proc() {
         // rendering commands
         ClearColor(0.2, 0.3, 0.3, 1.0)
         Clear(COLOR_BUFFER_BIT)
+
+        draw_triangle()
         // check and call events and swap buffers
         glfw.SwapBuffers(window)
         glfw.PollEvents()
