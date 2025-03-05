@@ -1,4 +1,4 @@
-package intro
+package hello_triangle
 
 import "core:fmt"
 import gl "vendor:OpenGL"
@@ -15,6 +15,20 @@ process_input :: proc "c" (window: glfw.WindowHandle){
         glfw.SetWindowShouldClose(window, true)
     }
 }
+
+draw_triangle :: proc "c" (){
+    using gl
+    vertices := [9]f32{
+        -0.5, -0.5, 0.0,
+        0.5, -0.5, 0.0,
+        0.0, 0.5, 0.0,
+    }
+    VBO: u32
+    GenBuffers(1, &VBO)
+    BindBuffer(ARRAY_BUFFER, VBO)
+    BufferData(ARRAY_BUFFER, len(vertices) * size_of(f32), &vertices, STATIC_DRAW)
+}
+
 main :: proc() {
     using gl
     // initialize and configure
