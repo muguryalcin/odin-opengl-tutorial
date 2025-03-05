@@ -1,4 +1,4 @@
-package hello_triangle
+package triangle_rectangle
 
 import "core:fmt"
 import gl "vendor:OpenGL"
@@ -34,7 +34,6 @@ draw_triangle :: proc (){
     VertexAttribPointer(0,3,FLOAT,FALSE,3*size_of(f32),uintptr(0))
     EnableVertexAttribArray(0)
 
-    
     vertex_shader_source := cstring(raw_data(#load("shader.vert")))
     vertex_shader := CreateShader(VERTEX_SHADER)
     ShaderSource(vertex_shader, 1, &vertex_shader_source, nil)
@@ -55,6 +54,59 @@ draw_triangle :: proc (){
 
     UseProgram(shader_program)
     DrawArrays(TRIANGLES, 0, 3)
+    
+}
+
+draw_rectangle :: proc(){
+    using gl
+    vertices := [12]f32{
+        0.5, 0.5, 0.0, // top right
+        0.5, -0.5, 0.0, // bottom right
+        -0.5, -0.5, 0.0, // bottom left
+        -0.5, 0.5, 0.0, // top left
+    }
+
+    indices := [6]u32{
+        0, 1, 3, // first triangle
+        1, 2, 3, // second triangle
+    }
+
+    VAO:u32
+    GenVertexArrays(1, &VAO)
+    BindVertexArray(VAO)
+
+    VBO:u32
+    GenBuffers(1, &VBO)
+    BindBuffer(ARRAY_BUFFER, VBO)
+    BufferData(ARRAY_BUFFER, size_of(vertices), &vertices, STATIC_DRAW)
+
+    EBO:u32
+    GenBuffers(1, &EBO)
+    BindBuffer(ELEMENT_ARRAY_BUFFER, EBO)
+    BufferData(ELEMENT_ARRAY_BUFFER, size_of(indices), &indices, STATIC_DRAW)
+    VertexAttribPointer(0,3,FLOAT,FALSE,3*size_of(f32),uintptr(0))
+    EnableVertexAttribArray(0)
+
+    vertex_shader_source := cstring(raw_data(#load("shader.vert")))
+    vertex_shader := CreateShader(VERTEX_SHADER)
+    ShaderSource(vertex_shader, 1, &vertex_shader_source, nil)
+    CompileShader(vertex_shader)
+
+    fragment_shader_source := cstring(raw_data(#load("frag.frag")))
+    fragment_shader := CreateShader(FRAGMENT_SHADER)
+    ShaderSource(fragment_shader, 1, &fragment_shader_source, nil)
+    CompileShader(fragment_shader)
+
+    shader_program := CreateProgram()
+    AttachShader(shader_program, vertex_shader)
+    AttachShader(shader_program, fragment_shader)
+    LinkProgram(shader_program)
+
+    DeleteShader(vertex_shader)
+    DeleteShader(fragment_shader)
+
+    UseProgram(shader_program)
+    DrawElements(TRIANGLES, 6, UNSIGNED_INT, nil)
     
 }
 
@@ -91,7 +143,7 @@ main :: proc() {
         ClearColor(0.2, 0.3, 0.3, 1.0)
         Clear(COLOR_BUFFER_BIT)
 
-        draw_triangle()
+        draw_rectangle()
         // check and call events and swap buffers
         glfw.SwapBuffers(window)
         glfw.PollEvents()
